@@ -1,4 +1,4 @@
-# SmartBus
+# SmartRide
 
 A real-time bus transportation management system built with Phoenix and Elixir, featuring WebSocket-based communication for live tracking, booking, and driver management.
 
