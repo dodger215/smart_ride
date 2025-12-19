@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartBus Socket Channel Tester</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .channels-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .channel-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transition: transform 0.3s ease;
+        }
+        
+        .channel-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+        }
+        
+        .channel-card h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+        
+        .status-connected {
+            background: #4caf50;
+            color: white;
+        }
+        
+        .status-disconnected {
+            background: #f44336;
+            color: white;
+        }
+        
+        .status-pending {
+            background: #ff9800;
+            color: white;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            flex: 1;
+            min-width: 80px;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            font-size: 0.9em;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5568d3;
+        }
+        
+        .btn-success {
+            background: #4caf50;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #45a049;
+        }
+        
+        .btn-danger {
+            background: #f44336;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #da190b;
+        }
+        
+        .input-group {
+            margin-bottom: 15px;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+            font-family: 'Courier New', monospace;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 5px rgba(102, 126, 234, 0.3);
+        }
+        
+        .output {
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-bottom: 10px;
+        }
+        
+        .output-success {
+            color: #4caf50;
+        }
+        
+        .output-error {
+            color: #f44336;
+        }
+        
+        .output-info {
+            color: #2196f3;
+        }
+        
+        .log-container {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-top: 30px;
+        }
+        
+        .log-container h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+        
+        .log-output {
+            background: #1e1e1e;
+            color: #00ff00;
+            border-radius: 5px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #333;
+        }
+        
+        .log-line {
+            margin-bottom: 5px;
+            padding: 3px 0;
+        }
+        
+        .log-time {
+            color: #888;
+            margin-right: 10px;
+        }
+        
+        .log-channel {
+            color: #ffff00;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        
+        .log-success {
+            color: #00ff00;
+        }
+        
+        .log-error {
+            color: #ff4444;
+        }
+        
+        .log-info {
+            color: #00ccff;
+        }
+        
+        .control-panel {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+        }
+        
+        .control-panel h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+        
+        .control-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .control-row {
+                grid-template-columns: 1fr;
+            }
+            
+            header h1 {
+                font-size: 1.8em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚌 SmartBus Socket Channel Tester</h1>
+            <p>Test all Phoenix WebSocket channels in real-time</p>
+        </header>
+        
+        <div class="control-panel">
+            <h2>🎮 Control Panel</h2>
+            <div class="control-row">
+                <div>
+                    <label>Server URL:</label>
+                    <input type="text" id="serverUrl" value="ws://localhost:4000/socket" placeholder="WebSocket URL">
+                </div>
+                <div>
+                    <label>User ID (optional):</label>
+                    <input type="text" id="userId" placeholder="user-123">
+                </div>
+            </div>
+            <div class="button-group">
+                <button class="btn-primary" onclick="connectAll()">Connect All Channels</button>
+                <button class="btn-danger" onclick="disconnectAll()">Disconnect All</button>
+                <button class="btn-success" onclick="clearLogs()">Clear Logs</button>
+            </div>
+        </div>
+        
+        <div class="channels-grid" id="channelsGrid">
+            <!-- Channels will be generated here -->
+        </div>
+        
+        <div class="log-container">
+            <h2>📊 Event Logs</h2>
+            <div class="log-output" id="logOutput">
+                <div class="log-line log-info"><span class="log-time">[INIT]</span> Channel tester ready. Click "Connect All Channels" to begin.</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const channels = [
+            { name: 'admin', topics: ['admin:system', 'admin:dashboard'], messages: ['approve_driver', 'verify_vehicle', 'suspend_user', 'monitor_trips'] },
+            { name: 'auth', topics: ['auth:user', 'auth:driver', 'auth:admin'], messages: ['register', 'verify_otp', 'login', 'logout'] },
+            { name: 'availability', topics: ['availability:driver', 'availability:dispatcher'], messages: ['set_available', 'set_busy', 'set_offline'] },
+            { name: 'driver', topics: ['driver:driver-1'], messages: ['update_location', 'start_trip', 'end_trip', 'accept_ride'] },
+            { name: 'dynamic_pricing', topics: ['pricing:system', 'pricing:lane:lane-1'], messages: ['calculate_surge', 'get_base_price'] },
+            { name: 'gps', topics: ['gps:vehicle:vehicle-1', 'gps:system'], messages: ['log_location', 'calculate_route', 'create_geofence'] },
+            { name: 'integration', topics: ['integration:system', 'integration:payment'], messages: ['call_maps_api', 'process_payment_gateway'] },
+            { name: 'notification', topics: ['notification:user:user-1', 'notification:system'], messages: ['send_notification', 'get_notifications'] },
+            { name: 'offline_operations', topics: ['offline:device:device-1'], messages: ['cache_offline_data', 'get_cached_data'] },
+            { name: 'passenger', topics: ['passenger:user:user-1'], messages: ['request_ride', 'cancel_ride', 'rate_trip'] },
+            { name: 'payment', topics: ['payment:system', 'payment:user:user-1'], messages: ['process_payment', 'get_payment_history'] },
+            { name: 'reports', topics: ['reports:admin', 'reports:driver'], messages: ['generate_revenue_report', 'get_popular_routes'] },
+            { name: 'review', topics: ['review:trip:trip-1', 'review:driver:driver-1'], messages: ['submit_driver_review', 'get_driver_reviews'] },
+            { name: 'ride_management', topics: ['ride_management:trip:trip-1'], messages: ['add_passenger', 'remove_passenger'] },
+            { name: 'ride_request', topics: ['ride_request:passenger:user-1', 'ride_request:system'], messages: ['request_ride', 'get_nearby_drivers'] },
+            { name: 'route_optimization', topics: ['route_optimization:system'], messages: ['analyze_demand_patterns', 'predict_congestion'] },
+            { name: 'seat_management', topics: ['seat_management:vehicle:vehicle-1'], messages: ['get_available_seats', 'reserve_seat'] },
+            { name: 'tracking', topics: ['tracking:trip:trip-1', 'tracking:vehicle:vehicle-1'], messages: ['start_tracking', 'update_location'] },
+            { name: 'vehicle', topics: ['vehicle:vehicle-1', 'vehicle:system'], messages: ['register_vehicle', 'update_vehicle_status'] }
+        ];
+
+        let socket = null;
+        let channelConnections = {};
+
+        function addLog(channel, message, type = 'info') {
+            const logOutput = document.getElementById('logOutput');
+            const timestamp = new Date().toLocaleTimeString();
+            const logLine = document.createElement('div');
+            logLine.className = `log-line log-${type}`;
+            logLine.innerHTML = `<span class="log-time">[${timestamp}]</span><span class="log-channel">${channel}:</span>${message}`;
+            logOutput.appendChild(logLine);
+            logOutput.scrollTop = logOutput.scrollHeight;
+        }
+
+        function clearLogs() {
+            document.getElementById('logOutput').innerHTML = '<div class="log-line log-info"><span class="log-time">[CLEARED]</span> Logs cleared.</div>';
+        }
+
+        function initializeChannels() {
+            const grid = document.getElementById('channelsGrid');
+            grid.innerHTML = '';
+
+            channels.forEach(channel => {
+                const card = document.createElement('div');
+                card.className = 'channel-card';
+                card.id = `card-${channel.name}`;
+                
+                const topicsHtml = channel.topics.map(t => `<code>${t}</code>`).join(', ');
+                const messagesHtml = channel.messages.map(m => `<code>${m}</code>`).join(', ');
+                
+                card.innerHTML = `
+                    <h3>${channel.name} Channel</h3>
+                    <div class="status-badge status-disconnected" id="status-${channel.name}">Disconnected</div>
+                    
+                    <div class="input-group">
+                        <label><strong>Topics:</strong></label>
+                        <div style="font-size: 0.85em; margin: 10px 0;">${topicsHtml}</div>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label><strong>Test Message:</strong></label>
+                        <select id="msg-${channel.name}">
+                            <option value="">Select a message type...</option>
+                            ${channel.messages.map(m => `<option value="${m}">${m}</option>`).join('')}
+                        </select>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label><strong>Payload (JSON):</strong></label>
+                        <input type="text" id="payload-${channel.name}" placeholder='{"key": "value"}' value="{}">
+                    </div>
+                    
+                    <div class="output" id="output-${channel.name}">Ready for testing...</div>
+                    
+                    <div class="button-group">
+                        <button class="btn-primary" onclick="connectChannel('${channel.name}')">Connect</button>
+                        <button class="btn-success" onclick="sendMessage('${channel.name}')">Send</button>
+                        <button class="btn-danger" onclick="disconnectChannel('${channel.name}')">Disconnect</button>
+                    </div>
+                `;
+                
+                grid.appendChild(card);
+            });
+        }
+
+        function connectChannel(channelName) {
+            const channel = channels.find(c => c.name === channelName);
+            if (!channel) return;
+
+            try {
+                const topic = channel.topics[0];
+                addLog(channelName, `Joining topic: ${topic}`, 'info');
+
+                const ch = socket.channel(topic, {});
+                
+                ch.on("ok", msg => {
+                    addLog(channelName, `Received: ${JSON.stringify(msg)}`, 'success');
+                    updateOutput(channelName, `✓ ${JSON.stringify(msg)}`);
+                });
+
+                ch.on("error", err => {
+                    addLog(channelName, `Error: ${JSON.stringify(err)}`, 'error');
+                    updateOutput(channelName, `✗ Error: ${JSON.stringify(err)}`);
+                });
+
+                ch.join()
+                    .receive("ok", msg => {
+                        addLog(channelName, `✓ Connected`, 'success');
+                        updateStatus(channelName, 'connected');
+                        updateOutput(channelName, `✓ Connected to ${topic}`);
+                    })
+                    .receive("error", reason => {
+                        addLog(channelName, `✗ Connection failed: ${reason}`, 'error');
+                        updateStatus(channelName, 'disconnected');
+                        updateOutput(channelName, `✗ Connection failed: ${reason}`);
+                    });
+
+                channelConnections[channelName] = ch;
+            } catch (error) {
+                addLog(channelName, `Error: ${error.message}`, 'error');
+                updateOutput(channelName, `✗ ${error.message}`);
+            }
+        }
+
+        function sendMessage(channelName) {
+            const ch = channelConnections[channelName];
+            if (!ch) {
+                addLog(channelName, 'Channel not connected', 'error');
+                updateOutput(channelName, '✗ Channel not connected');
+                return;
+            }
+
+            const messageType = document.getElementById(`msg-${channelName}`)?.value;
+            const payloadStr = document.getElementById(`payload-${channelName}`)?.value || '{}';
+            
+            if (!messageType) {
+                addLog(channelName, 'No message type selected', 'error');
+                updateOutput(channelName, '✗ Select a message type');
+                return;
+            }
+
+            try {
+                const payload = JSON.parse(payloadStr);
+                addLog(channelName, `Sending: ${messageType} with ${JSON.stringify(payload)}`, 'info');
+
+                ch.push(messageType, payload)
+                    .receive("ok", msg => {
+                        addLog(channelName, `✓ Response: ${JSON.stringify(msg)}`, 'success');
+                        updateOutput(channelName, `✓ ${JSON.stringify(msg)}`);
+                    })
+                    .receive("error", reason => {
+                        addLog(channelName, `✗ Error: ${JSON.stringify(reason)}`, 'error');
+                        updateOutput(channelName, `✗ ${JSON.stringify(reason)}`);
+                    });
+            } catch (error) {
+                addLog(channelName, `Invalid JSON: ${error.message}`, 'error');
+                updateOutput(channelName, `✗ Invalid JSON: ${error.message}`);
+            }
+        }
+
+        function disconnectChannel(channelName) {
+            const ch = channelConnections[channelName];
+            if (ch) {
+                ch.leave();
+                delete channelConnections[channelName];
+                addLog(channelName, 'Disconnected', 'info');
+                updateStatus(channelName, 'disconnected');
+                updateOutput(channelName, 'Disconnected');
+            }
+        }
+
+        function connectAll() {
+            if (!socket) {
+                initSocket();
+            }
+            
+            socket.connect();
+            addLog('SYSTEM', 'Connecting to all channels...', 'info');
+            
+            channels.forEach(channel => {
+                setTimeout(() => connectChannel(channel.name), 100);
+            });
+        }
+
+        function disconnectAll() {
+            Object.keys(channelConnections).forEach(name => {
+                disconnectChannel(name);
+            });
+            if (socket) {
+                socket.disconnect();
+            }
+            addLog('SYSTEM', 'Disconnected from all channels', 'info');
+        }
+
+        function updateStatus(channelName, status) {
+            const badge = document.getElementById(`status-${channelName}`);
+            if (badge) {
+                badge.className = `status-badge status-${status}`;
+                badge.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+            }
+        }
+
+        function updateOutput(channelName, message) {
+            const output = document.getElementById(`output-${channelName}`);
+            if (output) {
+                output.innerHTML = message;
+            }
+        }
+
+        function initSocket() {
+            const serverUrl = document.getElementById('serverUrl').value;
+            addLog('SOCKET', `Initializing connection to ${serverUrl}`, 'info');
+            
+            // Import Phoenix from CDN
+            if (typeof Phoenix === 'undefined') {
+                addLog('SOCKET', 'Phoenix library not found. Make sure it\'s loaded.', 'error');
+                return;
+            }
+
+            socket = new Phoenix.Socket(serverUrl, {
+                params: { token: "" }
+            });
+
+            socket.onOpen(() => addLog('SOCKET', 'Connection opened', 'success'));
+            socket.onClose(() => addLog('SOCKET', 'Connection closed', 'info'));
+            socket.onError(error => addLog('SOCKET', `Connection error: ${error}`, 'error'));
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeChannels();
+            initSocket();
+            addLog('SYSTEM', 'Page loaded. Ready to test channels.', 'success');
+        });
+    </script>
+
+    <!-- Phoenix JS from CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/phoenix@1.7.0/priv/static/phoenix.js"></script>
+</body>
+</html>
